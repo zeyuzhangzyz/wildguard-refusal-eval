@@ -19,6 +19,10 @@ Status: implementation_complete_not_executed
 - Added a versioned isolated SGLang environment preparer. It creates a fresh
   system-site-packages venv from the server's CUDA-enabled Python rather than
   modifying the shared `cxj` conda environment; it is not yet executed.
+- First `amax-77` installation attempt found the configured package mirror
+  publishes through `sglang==0.5.10.post1` but not `0.5.16`. The failed venv
+  contains only upgraded pip and is being replaced with the available pinned
+  version; no SGLang server was started.
 
 ## 2026-07-29 - Initial standalone package
 
