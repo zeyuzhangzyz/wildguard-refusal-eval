@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wildguard-refusal-eval"
+version = "0.1.0"
+description = "Resumable, sharded official WildGuard response-refusal evaluation"
+requires-python = ">=3.9"
+dependencies = ["openai>=1.30.0"]
+
+[project.optional-dependencies]
+serve = ["vllm>=0.12.0"]
+test = ["pytest>=8.0"]
+
+[project.scripts]
+wildguard-refusal-judge = "wildguard_refusal_eval.judge:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
