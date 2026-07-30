@@ -111,6 +111,19 @@ def make_proxy(logistic_c: float) -> Any:
     return Pipeline([("features", features), ("classifier", classifier)])
 
 
+def make_classifier(logistic_c: float) -> Any:
+    """Create the proxy's classifier independently of its fixed text features."""
+    from sklearn.linear_model import LogisticRegression
+
+    return LogisticRegression(
+        C=logistic_c,
+        max_iter=PROXY_CONFIG["max_iter"],
+        class_weight="balanced",
+        solver="liblinear",
+        random_state=PROXY_CONFIG["seed"],
+    )
+
+
 def binary_f1(labels: Any, predictions: Any) -> float:
     import numpy as np
 
@@ -140,13 +153,58 @@ def select_threshold(probabilities: Any, labels: Any) -> dict[str, float | int]:
     }
 
 
-def fit_proxy_and_score(train_path: Path, rows: list[dict[str, Any]], logistic_c: float) -> dict[str, Any]:
+def load_train_texts_labels(train_path: Path) -> tuple[list[str], Any]:
     import pandas as pd
 
     train = pd.read_parquet(train_path, columns=["prompt", "response", "response_refusal_label"])
     train = train[train["response_refusal_label"].notna()].reset_index(drop=True)
     texts = [response_example(prompt, response) for prompt, response in zip(train["prompt"], train["response"])]
     labels = train["response_refusal_label"].eq("refusal").astype(int).to_numpy()
+    return texts, labels
+
+
+def tune_logistic_c_on_train_validation(train_path: Path, logistic_cs: list[float]) -> dict[str, Any]:
+    """Choose C solely from the fixed held-out WildGuardTrain validation fold.
+
+    The TF-IDF vocabulary and training-fold matrix are intentionally built once.
+    They are independent of C, so this is equivalent to fitting one pipeline per
+    candidate while avoiding repeated expensive vectorization.
+    """
+    import numpy as np
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.pipeline import FeatureUnion
+
+    if not logistic_cs or any(value <= 0 for value in logistic_cs):
+        raise ValueError("Every logistic C candidate must be positive")
+    texts, labels = load_train_texts_labels(train_path)
+    validation_mask = deterministic_stratified_validation_mask(texts, labels)
+    fitting_texts = [text for text, keep in zip(texts, ~validation_mask) if keep]
+    validation_texts = [text for text, keep in zip(texts, validation_mask) if keep]
+    features = FeatureUnion([
+        ("word", TfidfVectorizer(analyzer="word", ngram_range=PROXY_CONFIG["word_ngram_range"], min_df=PROXY_CONFIG["min_df"], max_df=PROXY_CONFIG["max_df"], max_features=PROXY_CONFIG["word_max_features"], sublinear_tf=True, strip_accents="unicode")),
+        ("char", TfidfVectorizer(analyzer="char_wb", ngram_range=PROXY_CONFIG["char_ngram_range"], min_df=PROXY_CONFIG["min_df"], max_df=PROXY_CONFIG["max_df"], max_features=PROXY_CONFIG["char_max_features"], sublinear_tf=True)),
+    ])
+    fitting_features = features.fit_transform(fitting_texts)
+    validation_features = features.transform(validation_texts)
+    rows: list[dict[str, Any]] = []
+    for logistic_c in sorted(set(logistic_cs)):
+        classifier = make_classifier(logistic_c)
+        classifier.fit(fitting_features, labels[~validation_mask])
+        probabilities = classifier.predict_proba(validation_features)[:, 1]
+        threshold = select_threshold(probabilities, labels[validation_mask])
+        rows.append({"logistic_c": logistic_c, **threshold})
+    best = max(rows, key=lambda row: (float(row["reporting_validation_f1"]), float(row["raw_validation_f1"]), -float(row["logistic_c"])))
+    return {
+        "source": "deterministic stratified held-out validation partition of WildGuardTrain",
+        "fitting_records": int((~validation_mask).sum()),
+        "validation_records": int(validation_mask.sum()),
+        "candidates": rows,
+        "selected": best,
+    }
+
+
+def fit_proxy_and_score(train_path: Path, rows: list[dict[str, Any]], logistic_c: float) -> dict[str, Any]:
+    texts, labels = load_train_texts_labels(train_path)
     validation_mask = deterministic_stratified_validation_mask(texts, labels)
     calibration_proxy = make_proxy(logistic_c)
     calibration_proxy.fit([text for text, keep in zip(texts, ~validation_mask) if keep], labels[~validation_mask])
@@ -175,15 +233,48 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("plan", "build"), default="plan")
+    parser.add_argument("--mode", choices=("plan", "build", "tune-plan", "tune"), default="plan")
     parser.add_argument("--wildguard-train", type=Path, required=True)
-    parser.add_argument("--wildguard-test", type=Path, required=True)
+    parser.add_argument("--wildguard-test", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--logistic-c", type=float, default=PROXY_CONFIG["logistic_c"])
+    parser.add_argument("--tune-logistic-cs", type=float, nargs="+", default=None)
     args = parser.parse_args()
-    train_path, test_path, output_dir = args.wildguard_train.resolve(), args.wildguard_test.resolve(), args.output_dir.resolve()
+    train_path, output_dir = args.wildguard_train.resolve(), args.output_dir.resolve()
     if args.logistic_c <= 0:
         raise ValueError("--logistic-c must be positive")
+    if args.mode == "tune-plan":
+        candidates = args.tune_logistic_cs or [args.logistic_c]
+        if not candidates or any(value <= 0 for value in candidates):
+            raise ValueError("Every --tune-logistic-cs value must be positive")
+        print(json.dumps({
+            "mode": "tune-plan",
+            "wildguard_train": str(train_path),
+            "wildguard_train_sha256": sha256_file(train_path),
+            "test_protocol": "WildGuardTest is not loaded or inspected during hyperparameter selection",
+            "output_dir": str(output_dir),
+            "tune_logistic_cs": candidates,
+        }, ensure_ascii=False, indent=2))
+        return
+    if args.mode == "tune":
+        tune = tune_logistic_c_on_train_validation(train_path, args.tune_logistic_cs or [args.logistic_c])
+        tune_plan = {
+            "mode": "tune",
+            "wildguard_train": str(train_path),
+            "wildguard_train_sha256": sha256_file(train_path),
+            "test_protocol": "WildGuardTest is not loaded or inspected during hyperparameter selection",
+            "output_dir": str(output_dir),
+            "tuning": tune,
+        }
+        if output_dir.exists():
+            raise FileExistsError(f"Refusing to overwrite {output_dir}")
+        output_dir.mkdir(parents=True)
+        (output_dir / "tuning_manifest.json").write_text(json.dumps(tune_plan, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print(json.dumps(tune_plan, ensure_ascii=False, indent=2))
+        return
+    if args.wildguard_test is None:
+        raise ValueError("--wildguard-test is required unless --mode tune")
+    test_path = args.wildguard_test.resolve()
     rows = load_labeled_rows(test_path)
     plan = {
         "mode": args.mode,
