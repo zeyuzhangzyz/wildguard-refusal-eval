@@ -20,7 +20,7 @@ PROXY_CONFIG = {
     "char_ngram_range": (3, 5),
     "min_df": 3,
     "max_df": 0.995,
-    "logistic_c": 5.0,
+    "logistic_c": 10.0,
     "max_iter": 250,
     "seed": 20260729,
     "prompt_characters": 800,

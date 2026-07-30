@@ -89,3 +89,11 @@ Status: completed
   Adopted operational default `C=5`: it is near-validation-optimal, more
   regularized than `C=10`, and is best in that diagnostic. This is not a claim
   of pristine Test-set hyperparameter selection.
+
+## 2026-07-30 - User-selected C=10 operational setting
+
+Status: completed
+
+- The user selected `C=10` after the sensitivity analysis. The package default
+  now uses C=10, with the existing full-Train/full-Test result of F1 `83.66%`,
+  precision `74.72%`, and recall `95.03%` at `p>=0.40`.

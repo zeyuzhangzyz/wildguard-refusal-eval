@@ -35,3 +35,5 @@
 - [x] Ran Train-only regularization sweeps and a post-hoc Test sensitivity check.
   Package default is now `C=5`: validation F1 `95.22%` (within 0.04 points of
   the Train-validation maximum) and diagnostic Test F1 `83.88%`.
+- [x] User selected the C=10 operating point. Restored the package default to
+  `C=10`; full-Train/full-Test F1 is `83.66%` at `p>=0.40`.

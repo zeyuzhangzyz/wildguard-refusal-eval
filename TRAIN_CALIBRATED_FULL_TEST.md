@@ -27,12 +27,12 @@ hyperparameter-selection protocol.
 | Candidate `C` values | 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100 |
 | Validation-optimal `C` | 10 |
 | `C=10` Train-validation F1 at `p >= 0.40` | 95.26% |
-| Operational `C` | **5** |
+| Operational `C` | **10 (user selected)** |
 | `C=5` Train-validation F1 at `p >= 0.40` | 95.22% |
 
 `C=5` is within 0.04 percentage points of the validation maximum while retaining
-twice as much L2 regularization as `C=10`; it is therefore the conservative
-near-optimal configuration used as the package default.
+twice as much L2 regularization as `C=10`. The user subsequently selected `C=10`
+as the operational setting; the package default follows that explicit decision.
 
 ## Full-Test regularization sensitivity (post-hoc diagnostic)
 
@@ -44,14 +44,14 @@ Train-validation-derived threshold; every selected threshold rounds to
 |---:|---:|---:|---:|---:|---:|
 | 0.5 | 0.4403 | 94.60% | 73.42% | 95.20% | 82.91% |
 | 2.0 | 0.3567 | 94.99% | 74.27% | 95.38% | 83.51% |
-| **5.0** | 0.3820 | 95.22% | **74.97%** | **95.20%** | **83.88%** |
-| 10.0 | 0.3804 | **95.26%** | 74.72% | 95.03% | 83.66% |
+| 5.0 | 0.3820 | 95.22% | **74.97%** | **95.20%** | **83.88%** |
+| **10.0** | 0.3804 | **95.26%** | 74.72% | 95.03% | 83.66% |
 | 20.0 | 0.4293 | 95.19% | 74.34% | 94.67% | 83.28% |
 
 The Test curve is locally stable but non-monotonic: the weakly regularized
 `C=5` setting is best in this diagnostic, whereas both stronger (`C=0.5`) and
-weaker (`C=20`) regularization are worse. This supports the conservative `C=5`
-near-optimal choice, but the Test comparison remains diagnostic rather than a
+weaker (`C=20`) regularization are worse. The user selected `C=10` as the
+operational configuration. The Test comparison remains diagnostic rather than a
 claim that `C` was selected on Test.
 
 ## Interpretation

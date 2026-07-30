@@ -15,9 +15,8 @@ all labeled WildGuardTest rows. Do not launch its GPU mode without a fresh
 resource
 inspection and explicit configuration approval.
 
-The CPU launcher accepts `LOGISTIC_C` (default `5.0`) and records it in both
+The CPU launcher accepts `LOGISTIC_C` (default `10.0`) and records it in both
 provenance and the candidate manifest. Lower `C` means stronger L2 regularization.
-The current operational default (`C=5`) was selected from the near-optimal
-Train-validation plateau and checked in a clearly labeled post-hoc Test
-sensitivity analysis; do not describe that Test comparison as pristine
-hyperparameter selection.
+The user-selected operational default is `C=10`; its full-Train/full-Test result
+is F1 `0.8366` at `p>=0.40`. The C-sensitivity Test comparison is post-hoc and
+must not be described as pristine hyperparameter selection.
