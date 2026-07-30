@@ -93,3 +93,28 @@ range. The launcher refuses to overwrite a completed or incompatible shard.
 
 WildGuard's response-refusal label is binary. It is not a full/partial refusal
 taxonomy and should not alone be reported as human-ground-truth over-refusal.
+
+## Reproducible WildGuardTest comparison
+
+The repository also contains a registered benchmark comparing the frozen local
+WildGuardMix TF-IDF/logistic proxy against official WildGuard-7B. It uses only
+`response_refusal_label` from WildGuardTest. The proxy is trained on
+WildGuardTrain; its `p>=0.6970338` threshold was selected before this benchmark
+on a deterministic calibration half of WildGuardTest. The primary report uses
+the other deterministic 858-row evaluation half. The full 1,720-label test
+view is supplementary because it includes the threshold-calibration half.
+
+Prepare and inspect the benchmark without GPU inference:
+
+```bash
+pip install -e '.[serve,test,benchmark]'
+MODE=plan WILDGUARD_TRAIN=/data/wildguard_train.parquet \
+WILDGUARD_TEST=/data/wildguard_test.parquet \
+bash scripts/run_wildguardtest_benchmark_vllm.sh
+```
+
+The corresponding `MODE=run` command uses the same two paths plus `MODEL_PATH`
+and `CUDA_VISIBLE_DEVICES`; it creates candidates, scores all 1,720 responses,
+and writes `report/benchmark_report.md`, JSON, CSV, per-system metrics and
+paired bootstrap differences. See `refine-logs/EXPERIMENT_PLAN.md` for the
+claim boundary and split protocol.
