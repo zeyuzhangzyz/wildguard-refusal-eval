@@ -1,5 +1,27 @@
 # Runs
 
+## 2026-07-30 - full_matrix_sglang_remote_preflight
+
+Status: prepared_not_started
+
+- Task type: `gpu_multi_data_parallel` (planned)
+- Target: Base and Instruct Qwen3-0.6B BeaverTails matrices, each 540,000
+  existing responses, split by contiguous system-prompt index ranges.
+- Planned machine: `amax-77`; current free candidate physical GPUs are 0, 1, 5,
+  and 7. GPUs 2/3 remain reserved. `amax-78` has only 87 GiB free on `/data1`,
+  no usable `/data2/dxx` directory, and GPUs 0/1 are occupied, so it is not a
+  launch target unless that state changes.
+- Input source: local immutable JSON matrices
+  `qwen3_0.6b_base_beavertails_results.json` (2.4 GiB) and
+  `qwen3_0.6b_instruct_beavertails_results.json` (1.8 GiB), plus the 6,000-row
+  `beavertails.json` prompt file.
+- Transport: planned Hugging Face dataset repository
+  `zeyuzy/LLM_safety_update_reward`, using `scripts/run_sync_hf_artifact.sh` and
+  standard secure Hugging Face authentication only.
+- Status: `amax-77` has Hugging Face cache credentials and client packages, but
+  a Hub API request timed out; no artifact, model, candidate, or judgment output
+  has been created.
+
 ## 2026-07-30 - full_test_f1_20260730
 
 Status: completed

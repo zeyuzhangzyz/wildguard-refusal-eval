@@ -8,6 +8,37 @@ It deliberately does **not** generate model responses or build candidates from
 a bandit trace. Those are experiment-specific upstream steps. This repository
 only requires a candidate JSONL file and the locally available WildGuard model.
 
+## Complete response matrices
+
+For an already materialized response matrix, build only the contiguous
+system-prompt slice that will be scored. The generic builder streams a JSON
+array and therefore does not load a multi-GB matrix into memory:
+
+```bash
+MODE=run CONFIRM_MATRIX_CANDIDATE_BUILD=1 \
+RESPONSES=/data/qwen_base_responses.json PROMPTS=/data/beavertails.json \
+BACKBONE=base SYSTEM_PROMPT_BEGIN_INDEX=0 SYSTEM_PROMPT_END_INDEX_EXCLUSIVE=10 \
+OUTPUT_DIR=/data/LLM_score/wildguard_matrix/base/candidates/system_prompts_000_to_010 \
+bash scripts/run_build_matrix_candidates.sh
+```
+
+Then use SGLang with data-parallel replicas. The output records the same
+inclusive/exclusive range in its manifest and per-row judgments:
+
+```bash
+MODE=run CONFIRM_WILDGUARD_SGLANG_MATRIX_RUN=1 \
+INPUT=/data/LLM_score/wildguard_matrix/base/candidates/system_prompts_000_to_010/candidates.jsonl \
+OUTPUT_DIR=/data/LLM_score/wildguard_matrix/base/judgments/system_prompts_000_to_010 \
+MODEL_PATH=/data/models/WildGuard-7B CUDA_VISIBLE_DEVICES=0,1,5,7 TP_SIZE=1 DP_SIZE=4 \
+SYSTEM_PROMPT_BEGIN_INDEX=0 SYSTEM_PROMPT_END_INDEX_EXCLUSIVE=10 \
+bash scripts/run_sglang_matrix_shard.sh
+```
+
+For large immutable input files, `scripts/run_sync_hf_artifact.sh` uploads or
+downloads a specified file through a Hugging Face **dataset** repository. It
+accepts no token argument; standard Hugging Face environment/cache credentials
+are the only supported authentication path.
+
 ## Input contract
 
 Each non-empty JSONL row must contain:

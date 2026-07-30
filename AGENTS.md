@@ -25,3 +25,11 @@ must not be described as pristine hyperparameter selection.
 with exactly 2,000 `unharmful`-request QA pairs and 2,000 `harmful`-request QA
 pairs. It holds out prompts—not merely rows—so held-out requests do not enter
 either proxy fitting or threshold validation. It is never an external test.
+
+For complete response matrices, use only the generic streaming builder
+`scripts/run_build_matrix_candidates.sh` and SGLang scorer
+`scripts/run_sglang_matrix_shard.sh`. They preserve an explicit contiguous
+`[begin,end)` system-prompt range. Large immutable matrices may move through a
+Hugging Face dataset repository only with `scripts/run_sync_hf_artifact.sh`;
+credentials must come from Hugging Face's secure environment/cache and may not
+be added to code, commands, logs, or documentation.

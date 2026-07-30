@@ -1,5 +1,22 @@
 # Progress
 
+## 2026-07-30 - Full response-matrix SGLang path prepared
+
+Status: implementation_complete_not_executed
+
+- Added a generic streaming matrix-candidate builder. It accepts an immutable
+  response JSON array plus aligned prompts and emits exactly one contiguous
+  system-prompt range without loading the multi-GB source into memory.
+- Added a range-preserving SGLang launcher using explicit TP/DP settings and
+  a Hugging Face dataset-artifact transfer wrapper. The wrapper accepts no token
+  argument and relies only on the standard Hugging Face credential cache/env.
+- Local Python compilation, Bash syntax, a chunk-boundary JSON-stream fixture,
+  and a real Base-matrix `MODE=plan` all pass. No large artifact transfer, model
+  download, SGLang server, GPU allocation, or WildGuard inference has started.
+- Remote readiness found authenticated Hugging Face cache files on `amax-77`,
+  but the first Hub API request did not return within 60 seconds. Resolve the
+  server's Hub network route before submitting the two 540,000-response inputs.
+
 ## 2026-07-29 - Initial standalone package
 
 Status: implementation_complete_not_executed

@@ -2,6 +2,11 @@
 
 ## Doing
 
+- [ ] Resolve the `amax-77` Hugging Face network route, upload/download the
+  immutable Base and Instruct 540,000-response matrices through the authorized
+  dataset repository, then execute the range-sharded official WildGuard SGLang
+  evaluation. Use only the Git-versioned generic builder/launcher; preserve
+  `[begin,end)` provenance and never place credentials in commands or logs.
 - [x] Validate editable installation and a fixture `MODE=plan` range.
 - [x] Monitor `full_test_f1_20260730` and verify its full-test proxy report,
   exact 1,720-row coverage, provenance, and output metrics.
