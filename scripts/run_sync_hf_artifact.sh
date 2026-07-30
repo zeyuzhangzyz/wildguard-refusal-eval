@@ -12,6 +12,8 @@ REPO_ID="${REPO_ID:-zeyuzy/LLM_safety_update_reward}"
 LOCAL_PATH="${LOCAL_PATH:?Set LOCAL_PATH}"
 REPO_PATH="${REPO_PATH:?Set REPO_PATH}"
 REVISION="${REVISION:-main}"
+DOWNLOAD_BACKEND="${DOWNLOAD_BACKEND:-hub}"
+TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-600}"
 CONFIRM_HF_ARTIFACT_TRANSFER="${CONFIRM_HF_ARTIFACT_TRANSFER:-0}"
 
 [[ "${CONFIRM_HF_ARTIFACT_TRANSFER}" == "1" ]] || {
@@ -22,4 +24,5 @@ CONFIRM_HF_ARTIFACT_TRANSFER="${CONFIRM_HF_ARTIFACT_TRANSFER:-0}"
 }
 cd "${REPO_ROOT}"
 "${PYTHON_BIN}" scripts/sync_hf_artifact.py --action "${ACTION}" --repo-id "${REPO_ID}" \
-  --local-path "${LOCAL_PATH}" --repo-path "${REPO_PATH}" --revision "${REVISION}" --confirm
+  --local-path "${LOCAL_PATH}" --repo-path "${REPO_PATH}" --revision "${REVISION}" \
+  --download-backend "${DOWNLOAD_BACKEND}" --timeout-seconds "${TIMEOUT_SECONDS}" --confirm

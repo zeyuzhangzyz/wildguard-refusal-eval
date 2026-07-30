@@ -30,6 +30,10 @@ Status: implementation_complete_not_executed
 - The mirror-available SGLang installation then resolved to PyTorch 2.9.1 but
   its wheel lacked `libnvshmem_host.so.3`. The preparer now installs the missing
   NVIDIA runtime wheel within the isolated venv before its import witness.
+- The Hub client stalls in a preliminary HEAD request through the temporary
+  SOCKS route. Added a requests-based streaming download fallback that follows
+  the same authenticated Hub URL, writes atomically, and retains a post-download
+  SHA-256 record without printing credentials.
 
 ## 2026-07-29 - Initial standalone package
 
