@@ -23,6 +23,10 @@ Status: implementation_complete_not_executed
   publishes through `sglang==0.5.10.post1` but not `0.5.16`. The failed venv
   contains only upgraded pip and is being replaced with the available pinned
   version; no SGLang server was started.
+- A second attempt showed that upgrading the venv to pip 26 breaks SOCKS proxy
+  handling in this server environment (`key_proxy_ssl_context`). The preparer
+  now preserves the base venv pip version; the failed temporary venv is replaced
+  before retrying.
 
 ## 2026-07-29 - Initial standalone package
 
