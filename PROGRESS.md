@@ -24,3 +24,16 @@ Status: implementation_complete_not_executed
   This full-test row includes the threshold-calibration half and is descriptive;
   the 858-row threshold-unseen F1 remains `0.8702`.
 - No model inference or GPU server has been launched from this new repository.
+
+## 2026-07-30 - Rounded fixed refusal threshold
+
+Status: implementation_complete
+
+- Replaced the historical calibrated `p>=0.6970338` decision boundary with the
+  globally fixed, reportable `p>=0.70` boundary in candidate construction and
+  both proxy/7B report paths. The report now thresholds stored probabilities at
+  report time, avoiding stale thresholded labels.
+- Recomputed metrics from the immutable candidate probabilities: full 1,720-row
+  F1 is `0.8640` (precision `0.8333`, recall `0.8970`); the deterministic 858-row
+  evaluation F1 is unchanged at `0.8702`. The historical `0.6970338` run remains
+  recorded unchanged in `RUNS.md`.

@@ -8,9 +8,9 @@
 
 ## Next
 
-- [ ] Run the CPU-only fixed-threshold 1,720-row WildGuardTest proxy report after
-  reporting its configuration; its 858-row threshold-unseen evaluation split is
-  the primary F1 result.
+- [ ] Materialize a new, provenance-recorded CPU-only report at the fixed
+  `p>=0.70` threshold if an on-disk report separate from the historical
+  `p>=0.6970338` run is needed.
 - [ ] If needed after the proxy report, inspect GPU resources and obtain approval
   for the optional official-WildGuard-7B comparator.
 - [ ] Before a GPU run, inspect resources and confirm model path, visible GPUs,
@@ -20,3 +20,9 @@
 
 - [ ] Full GPU scoring requires a locally available, access-approved
   `allenai/wildguard` checkpoint.
+
+## Done
+
+- [x] Switched the reportable TF-IDF refusal threshold to the fixed, rounded
+  `p>=0.70` convention. Recomputing the saved 1,720 probabilities gives full
+  F1 `0.8640` and held-out evaluation F1 `0.8702`.

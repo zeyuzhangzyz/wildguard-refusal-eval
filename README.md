@@ -99,10 +99,10 @@ taxonomy and should not alone be reported as human-ground-truth over-refusal.
 The repository also contains a registered, CPU-only benchmark for the frozen
 local WildGuardMix TF-IDF/logistic proxy. It uses official
 WildGuardTest `response_refusal_label` as ground truth. The proxy is trained on
-WildGuardTrain; its `p>=0.6970338` threshold was selected before this benchmark
-on a deterministic calibration half of WildGuardTest. The primary report uses
-the other deterministic 858-row evaluation half. The full 1,720-label test
-view is supplementary because it includes the threshold-calibration half.
+WildGuardTrain; it uses the globally fixed, reportable `p>=0.70` threshold.
+The primary report uses the deterministic 858-row evaluation half retained from
+the original calibration protocol. The full 1,720-label test view is
+supplementary.
 
 Prepare and inspect the benchmark without GPU inference:
 

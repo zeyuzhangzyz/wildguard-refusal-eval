@@ -8,7 +8,7 @@ range plus input-hash provenance. Never store Hugging Face tokens or API keys.
 
 The reportable proxy comparison is registered in
 `scripts/run_wildguardtest_benchmark_vllm.sh` and
-`refine-logs/EXPERIMENT_PLAN.md`. It uses the fixed `p>=0.6970338` proxy
-threshold; the threshold-unseen evaluation half is primary, while all-test
-numbers are descriptive. Do not launch its GPU mode without a fresh resource
+`refine-logs/EXPERIMENT_PLAN.md`. It uses the fixed `p>=0.70` proxy
+threshold; the deterministic evaluation half is primary, while all-test numbers
+are descriptive. Do not launch its GPU mode without a fresh resource
 inspection and explicit configuration approval.

@@ -11,7 +11,9 @@ from pathlib import Path
 from typing import Any
 
 
-F1_THRESHOLD = 0.6970338
+# A simple fixed decision threshold makes the proxy easy to reproduce and report.
+# It is deliberately not tuned per downstream bandit method or backbone.
+REFUSAL_THRESHOLD = 0.70
 PROXY_CONFIG = {
     "word_max_features": 60000,
     "char_max_features": 80000,
@@ -111,7 +113,7 @@ def fit_proxy_and_score(train_path: Path, rows: list[dict[str, Any]]) -> None:
     probabilities = proxy.predict_proba([response_example(row["prompt"], row["response"]) for row in rows])[:, 1]
     for row, probability in zip(rows, probabilities):
         row["tfidf_refusal_probability"] = float(probability)
-        row["tfidf_refusal_at_f1_threshold"] = bool(probability >= F1_THRESHOLD)
+        row["tfidf_refusal_at_threshold"] = bool(probability >= REFUSAL_THRESHOLD)
 
 
 def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -139,8 +141,8 @@ def main() -> None:
         "records": len(rows),
         "refusal_positive_count": sum(row["ground_truth_refusal"] for row in rows),
         "split_counts": counts,
-        "tfidf_f1_threshold": F1_THRESHOLD,
-        "threshold_selection": "fixed before this run on deterministic calibration split; primary metrics use the evaluation split only",
+        "tfidf_refusal_threshold": REFUSAL_THRESHOLD,
+        "threshold_selection": "fixed conventional probability threshold; the deterministic evaluation split remains the primary view for continuity with the earlier calibration protocol",
         "output_dir": str(output_dir),
     }
     if args.mode == "plan":

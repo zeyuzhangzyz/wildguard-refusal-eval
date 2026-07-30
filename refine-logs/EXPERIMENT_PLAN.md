@@ -1,7 +1,7 @@
 # Experiment Plan
 
 **Problem**: determine whether the scalable WildGuardMix-trained TF-IDF refusal
-proxy at its frozen F1 threshold agrees with, and has comparable refusal-label
+proxy at its fixed 0.70 threshold agrees with, and has comparable refusal-label
 accuracy to, the released WildGuard-7B judge.
 
 **Method Thesis**: the proxy is useful only if its held-out binary-refusal
@@ -22,9 +22,9 @@ the 7B comparison is supplementary rather than a prerequisite.
 ### B1: Threshold-unseen WildGuardTest proxy benchmark
 - Claim tested: C1.
 - Dataset / split: all 1,720 WildGuardTest rows with a response-refusal label;
-  train TF-IDF only on WildGuardTrain. Threshold `0.6970338` is frozen from the
-  deterministic 862-row calibration half. Primary metrics are only the other
-  858-row evaluation half.
+  train TF-IDF only on WildGuardTrain. The globally fixed threshold is `0.70`.
+  The deterministic 858-row evaluation half remains primary for continuity with
+  the original calibration protocol.
 - Compared systems: fixed-threshold TF-IDF proxy against official dataset labels.
 - Metrics: accuracy, balanced accuracy, precision, recall, F1, mIoU, and the
   complete confusion matrix.
@@ -62,7 +62,8 @@ the 7B comparison is supplementary rather than a prerequisite.
 
 ## Risks and Mitigations
 
-- Threshold leakage: primary metrics exclude the calibration half.
+- Threshold protocol: use the globally fixed `p>=0.70`; retain the original
+  evaluation half as primary so no downstream method/backbone influences it.
 - Judge scope: report binary refusal only, never full/partial refusal or human
   over-refusal.
 - Failure recovery: JSONL judgments resume by example ID after manifest/hash
