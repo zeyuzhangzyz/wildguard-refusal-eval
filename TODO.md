@@ -3,6 +3,8 @@
 ## Doing
 
 - [x] Validate editable installation and a fixture `MODE=plan` range.
+- [ ] Monitor `full_test_f1_20260730` and verify its full-test proxy report,
+  exact 1,720-row coverage, provenance, and output metrics.
 
 ## Next
 
