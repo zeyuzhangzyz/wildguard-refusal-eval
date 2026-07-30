@@ -33,3 +33,7 @@ For complete response matrices, use only the generic streaming builder
 Hugging Face dataset repository only with `scripts/run_sync_hf_artifact.sh`;
 credentials must come from Hugging Face's secure environment/cache and may not
 be added to code, commands, logs, or documentation.
+
+For `amax-77`, create the isolated SGLang environment only through
+`scripts/prepare_sglang_environment.sh`, with the existing CUDA-enabled `cxj`
+Python as `BASE_PYTHON`. It must not modify that shared conda environment.

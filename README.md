@@ -68,6 +68,17 @@ not a supported Windows serving path. Python 3.9+ is supported.
    pip install -e '.[serve,test]'
    ```
 
+   On a shared server where a CUDA-enabled PyTorch environment is already
+   available, use the versioned isolated setup instead; it reuses only that
+   environment's site packages and does not alter it:
+
+   ```bash
+   MODE=run CONFIRM_SGLANG_ENVIRONMENT_SETUP=1 \
+   BASE_PYTHON=/home/amax/miniforge3/envs/cxj/bin/python \
+   VENV_DIR=/data1/dxx/LLM_score/envs/wildguard-sglang \
+   bash scripts/prepare_sglang_environment.sh
+   ```
+
    On a Windows machine used only for CPU-side planning, set `PYTHONUTF8=1`
    before invoking Python if its site-packages use UTF-8 `.pth` files.
 

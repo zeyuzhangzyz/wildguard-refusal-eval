@@ -16,6 +16,9 @@ Status: implementation_complete_not_executed
 - Remote readiness found authenticated Hugging Face cache files on `amax-77`,
   but the first Hub API request did not return within 60 seconds. Resolve the
   server's Hub network route before submitting the two 540,000-response inputs.
+- Added a versioned isolated SGLang environment preparer. It creates a fresh
+  system-site-packages venv from the server's CUDA-enabled Python rather than
+  modifying the shared `cxj` conda environment; it is not yet executed.
 
 ## 2026-07-29 - Initial standalone package
 

@@ -7,6 +7,8 @@
   dataset repository, then execute the range-sharded official WildGuard SGLang
   evaluation. Use only the Git-versioned generic builder/launcher; preserve
   `[begin,end)` provenance and never place credentials in commands or logs.
+- [ ] Create and validate the isolated `amax-77` SGLang serving environment from
+  the Git-versioned preparer. Do not modify the shared `cxj` conda environment.
 - [x] Validate editable installation and a fixture `MODE=plan` range.
 - [x] Monitor `full_test_f1_20260730` and verify its full-test proxy report,
   exact 1,720-row coverage, provenance, and output metrics.
