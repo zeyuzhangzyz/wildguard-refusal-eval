@@ -11,6 +11,7 @@ WILDGUARD_TRAIN="${WILDGUARD_TRAIN:?Set WILDGUARD_TRAIN}"
 RUN_ID="${RUN_ID:-$(date -u +%Y%m%d_%H%M%S)}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-${REPO_ROOT}/outputs/wildguardtrain_proxy_tune}"
 RUN_ROOT="${RUN_ROOT:-${OUTPUT_ROOT}/${RUN_ID}}"
+TUNING_DIR="${RUN_ROOT}/tuning"
 PYTHON_BIN="${PYTHON_BIN:-python}"
 CPU_THREADS="${CPU_THREADS:-1}"
 LOGISTIC_CS="${LOGISTIC_CS:-0.05 0.1 0.2 0.5 1 2 5 10}"
@@ -39,13 +40,13 @@ command=${RUN_COMMAND_ORIGINAL}
 EOF
 }
 case "${MODE}" in
-  plan) "${PYTHON_BIN}" -m wildguard_refusal_eval.benchmark --mode tune-plan --wildguard-train "${WILDGUARD_TRAIN}" --output-dir "${RUN_ROOT}" --tune-logistic-cs ${LOGISTIC_CS} ;;
+  plan) "${PYTHON_BIN}" -m wildguard_refusal_eval.benchmark --mode tune-plan --wildguard-train "${WILDGUARD_TRAIN}" --output-dir "${TUNING_DIR}" --tune-logistic-cs ${LOGISTIC_CS} ;;
   run)
     [[ "${CONFIRM_WILDGUARDTRAIN_PROXY_TUNE}" == "1" ]] || { echo "Set CONFIRM_WILDGUARDTRAIN_PROXY_TUNE=1." >&2; exit 3; }
     [[ ! -e "${RUN_ROOT}" ]] || { echo "Refusing to overwrite ${RUN_ROOT}" >&2; exit 3; }
     export RUN_COMMAND_ORIGINAL="MODE=run RUN_ID=${RUN_ID} CPU_THREADS=${CPU_THREADS} LOGISTIC_CS='${LOGISTIC_CS}' WILDGUARD_TRAIN=${WILDGUARD_TRAIN} bash scripts/run_wildguardtrain_proxy_tune.sh"
     write_provenance
-    "${PYTHON_BIN}" -m wildguard_refusal_eval.benchmark --mode tune --wildguard-train "${WILDGUARD_TRAIN}" --output-dir "${RUN_ROOT}" --tune-logistic-cs ${LOGISTIC_CS}
+    "${PYTHON_BIN}" -m wildguard_refusal_eval.benchmark --mode tune --wildguard-train "${WILDGUARD_TRAIN}" --output-dir "${TUNING_DIR}" --tune-logistic-cs ${LOGISTIC_CS}
     ;;
   *) echo "Unknown MODE=${MODE}; expected plan|run" >&2; exit 2 ;;
 esac
