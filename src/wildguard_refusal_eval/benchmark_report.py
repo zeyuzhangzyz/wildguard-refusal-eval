@@ -11,7 +11,6 @@ from typing import Any
 
 import numpy as np
 
-from wildguard_refusal_eval.benchmark import REFUSAL_THRESHOLD
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -62,32 +61,35 @@ def main() -> None:
         if not isinstance(judgment.get("response_refusal"), bool):
             raise ValueError(f"{example_id}: missing parsed response_refusal")
         probability = candidate.get("tfidf_refusal_probability")
-        if not isinstance(probability, float):
+        threshold = candidate.get("tfidf_refusal_threshold")
+        if not isinstance(probability, float) or not isinstance(threshold, float):
             raise ValueError(f"{example_id}: missing TF-IDF refusal probability")
-        rows.append({"split": candidate["split"], "truth": bool(candidate["ground_truth_refusal"]), "tfidf": probability >= REFUSAL_THRESHOLD, "wildguard7b": bool(judgment["response_refusal"])})
+        rows.append({"truth": bool(candidate["ground_truth_refusal"]), "tfidf": probability >= threshold, "wildguard7b": bool(judgment["response_refusal"]), "threshold": threshold})
+    thresholds = {float(row["threshold"]) for row in rows}
+    if len(thresholds) != 1:
+        raise ValueError(f"Expected exactly one candidate threshold, got {sorted(thresholds)}")
+    threshold = thresholds.pop()
     output_dir = args.output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    systems = {f"tfidf_proxy_p_ge_{REFUSAL_THRESHOLD:.2f}": "tfidf", "official_wildguard_7b": "wildguard7b"}
+    systems = {f"tfidf_proxy_p_ge_{threshold:.2f}": "tfidf", "official_wildguard_7b": "wildguard7b"}
     summaries: list[dict[str, Any]] = []
     bootstrap: dict[str, Any] = {}
-    for split in ("evaluation", "calibration", "all"):
-        subset = rows if split == "all" else [row for row in rows if row["split"] == split]
-        y_true = np.asarray([row["truth"] for row in subset], dtype=bool)
-        for name, key in systems.items():
-            metrics = metric_row(y_true, np.asarray([row[key] for row in subset], dtype=bool))
-            summaries.append({"split": split, "system": name, **metrics})
-        bootstrap[split] = bootstrap_differences(y_true, np.asarray([row["tfidf"] for row in subset], dtype=bool), np.asarray([row["wildguard7b"] for row in subset], dtype=bool), args.bootstrap_repetitions, args.bootstrap_seed)
-    payload = {"primary_split": "evaluation", "threshold": REFUSAL_THRESHOLD, "records": len(rows), "metrics": summaries, "paired_bootstrap_tfidf_minus_wildguard7b": bootstrap, "scope": "Primary comparison uses the deterministic evaluation split. The threshold is fixed globally at 0.70; calibration and all-test views remain descriptive for continuity with the earlier split protocol."}
+    y_true = np.asarray([row["truth"] for row in rows], dtype=bool)
+    for name, key in systems.items():
+        metrics = metric_row(y_true, np.asarray([row[key] for row in rows], dtype=bool))
+        summaries.append({"split": "all", "system": name, **metrics})
+    bootstrap["all"] = bootstrap_differences(y_true, np.asarray([row["tfidf"] for row in rows], dtype=bool), np.asarray([row["wildguard7b"] for row in rows], dtype=bool), args.bootstrap_repetitions, args.bootstrap_seed)
+    payload = {"primary_split": "all", "threshold": threshold, "records": len(rows), "metrics": summaries, "paired_bootstrap_tfidf_minus_wildguard7b": bootstrap, "scope": "All labeled WildGuardTest rows are final evaluation only; threshold selection used a held-out WildGuardTrain validation partition."}
     (output_dir / "benchmark_metrics.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     with (output_dir / "benchmark_metrics.csv").open("w", encoding="utf-8", newline="") as handle:
         fields = ["split", "system", "n", "accuracy", "balanced_accuracy", "precision", "recall", "f1", "mIoU", "confusion_matrix"]
         writer = csv.DictWriter(handle, fieldnames=fields); writer.writeheader(); writer.writerows(summaries)
-    lines = ["# WildGuardTest Response-Refusal Benchmark", "", f"Primary split: deterministic evaluation subset. TF-IDF threshold: `p >= {REFUSAL_THRESHOLD:.2f}`.", "", "| Split | System | n | Accuracy | Balanced acc. | Precision | Recall | F1 | mIoU |", "|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
+    lines = ["# WildGuardTest Response-Refusal Benchmark", "", f"All labeled WildGuardTest rows are final evaluation. TF-IDF threshold selected on held-out WildGuardTrain validation: `p >= {threshold:.2f}`.", "", "| Split | System | n | Accuracy | Balanced acc. | Precision | Recall | F1 | mIoU |", "|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
     for row in summaries:
         lines.append(f"| {row['split']} | {row['system']} | {row['n']} | {row['accuracy']:.4f} | {row['balanced_accuracy']:.4f} | {row['precision']:.4f} | {row['recall']:.4f} | {row['f1']:.4f} | {row['mIoU']:.4f} |")
-    lines += ["", "The primary table is `evaluation`; `calibration` and `all` are descriptive only. Binary refusal is not full/partial refusal ground truth."]
+    lines += ["", "Binary refusal is not full/partial refusal ground truth."]
     (output_dir / "benchmark_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(json.dumps({"output_dir": str(output_dir), "primary_split": "evaluation", "records": len(rows)}, indent=2))
+    print(json.dumps({"output_dir": str(output_dir), "primary_split": "all", "records": len(rows), "threshold": threshold}, indent=2))
 
 
 if __name__ == "__main__":

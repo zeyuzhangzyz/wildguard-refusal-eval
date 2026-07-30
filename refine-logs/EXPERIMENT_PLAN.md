@@ -1,7 +1,7 @@
 # Experiment Plan
 
 **Problem**: determine whether the scalable WildGuardMix-trained TF-IDF refusal
-proxy at its fixed 0.70 threshold agrees with, and has comparable refusal-label
+proxy at a Train-calibrated, reportable threshold agrees with, and has comparable refusal-label
 accuracy to, the released WildGuard-7B judge.
 
 **Method Thesis**: the proxy is useful only if its held-out binary-refusal
@@ -19,17 +19,18 @@ the 7B comparison is supplementary rather than a prerequisite.
 
 ## Experiment Blocks
 
-### B1: Threshold-unseen WildGuardTest proxy benchmark
+### B1: Train-calibrated full WildGuardTest proxy benchmark
 - Claim tested: C1.
 - Dataset / split: all 1,720 WildGuardTest rows with a response-refusal label;
-  train TF-IDF only on WildGuardTrain. The globally fixed threshold is `0.70`.
-  The deterministic 858-row evaluation half remains primary for continuity with
-  the original calibration protocol.
+  train TF-IDF only on WildGuardTrain. A deterministic 20% validation partition
+  of WildGuardTrain selects the F1-optimal threshold, rounded to one reportable
+  decimal. The final proxy is refit on all WildGuardTrain rows; all 1,720
+  WildGuardTest rows are then evaluated exactly once.
 - Compared systems: fixed-threshold TF-IDF proxy against official dataset labels.
 - Metrics: accuracy, balanced accuracy, precision, recall, F1, mIoU, and the
   complete confusion matrix.
 - Setup: CPU-only re-fit on WildGuardTrain; no 7B server or response generation.
-- Success criterion: a complete 858-row report with exact ID coverage and a
+- Success criterion: a complete 1,720-row report with exact ID coverage and a
   clear binary-refusal scope label.
 - Failure interpretation: a weak held-out result limits the proxy to candidate
   gating/sensitivity rather than primary aggregate scoring.
@@ -47,8 +48,8 @@ the 7B comparison is supplementary rather than a prerequisite.
 
 | Milestone | Goal | Runs | Decision Gate | Cost | Risk |
 |---|---|---|---|---|---|
-| M0 | Verify data/split | `MODE=plan` | exactly 1,720 labels, 862/858 split | CPU seconds | source dataset drift |
-| M1 | Primary proxy report | CPU `MODE=run` | 858-row held-out F1 report | CPU minutes | train dependency mismatch |
+| M0 | Verify data/split | `MODE=plan` | exactly 1,720 labels; Train-only threshold protocol | CPU seconds | source dataset drift |
+| M1 | Primary proxy report | CPU `MODE=run` | 1,720-row final-test F1 report | CPU minutes | train dependency mismatch |
 | M2 | Optional official comparator | vLLM `MODE=run` | 1,720 parsed 7B outputs | one 7B GPU pass | gated weights/GPU availability |
 | M3 | Optional comparison report | automatic + `MODE=report` | all IDs and labels join exactly | CPU seconds | no C/P/F interpretation |
 
@@ -62,8 +63,8 @@ the 7B comparison is supplementary rather than a prerequisite.
 
 ## Risks and Mitigations
 
-- Threshold protocol: use the globally fixed `p>=0.70`; retain the original
-  evaluation half as primary so no downstream method/backbone influences it.
+- Threshold protocol: choose the threshold exclusively from a deterministic
+  WildGuardTrain validation partition; never use WildGuardTest for calibration.
 - Judge scope: report binary refusal only, never full/partial refusal or human
   over-refusal.
 - Failure recovery: JSONL judgments resume by example ID after manifest/hash

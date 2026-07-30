@@ -37,3 +37,17 @@ Status: implementation_complete
   F1 is `0.8640` (precision `0.8333`, recall `0.8970`); the deterministic 858-row
   evaluation F1 is unchanged at `0.8702`. The historical `0.6970338` run remains
   recorded unchanged in `RUNS.md`.
+
+## 2026-07-30 - Train-only threshold protocol
+
+Status: implementation_complete_not_executed
+
+- Replaced the prior WildGuardTest calibration/evaluation split. The benchmark
+  now reserves all 1,720 labeled WildGuardTest examples for one final report.
+- It deterministically holds out one fifth of WildGuardTrain for threshold
+  selection, chooses the validation F1-optimal boundary, rounds it to one
+  reportable decimal, and then refits the proxy on all WildGuardTrain rows before
+  scoring the full test set. Compilation, three unit tests, Bash syntax, and the
+  real-data `MODE=plan` check pass.
+- A fresh provenance-recorded CPU run is pending; historic test-calibrated
+  numbers remain archival only and must not be used as the primary comparison.

@@ -11,7 +11,6 @@ from typing import Any
 
 import numpy as np
 
-from wildguard_refusal_eval.benchmark import REFUSAL_THRESHOLD
 from wildguard_refusal_eval.benchmark_report import metric_row
 
 
@@ -29,24 +28,24 @@ def main() -> None:
     if not rows:
         raise ValueError("Candidate file is empty")
     for row in rows:
-        if not isinstance(row.get("ground_truth_refusal"), bool) or not isinstance(row.get("tfidf_refusal_probability"), float):
+        if not isinstance(row.get("ground_truth_refusal"), bool) or not isinstance(row.get("tfidf_refusal_probability"), float) or not isinstance(row.get("tfidf_refusal_threshold"), float):
             raise ValueError(f"{row.get('example_id')}: missing ground-truth or thresholded TF-IDF label")
+    thresholds = {float(row["tfidf_refusal_threshold"]) for row in rows}
+    if len(thresholds) != 1:
+        raise ValueError(f"Expected exactly one candidate threshold, got {sorted(thresholds)}")
+    threshold = thresholds.pop()
     summaries: list[dict[str, Any]] = []
-    for split in ("evaluation", "calibration", "all"):
-        subset = rows if split == "all" else [row for row in rows if row.get("split") == split]
-        if not subset:
-            raise ValueError(f"No rows for split={split}")
-        y_true = np.asarray([row["ground_truth_refusal"] for row in subset], dtype=bool)
-        predicted = np.asarray([row["tfidf_refusal_probability"] >= REFUSAL_THRESHOLD for row in subset], dtype=bool)
-        summaries.append({"split": f"{split}", "system": f"tfidf_proxy_p_ge_{REFUSAL_THRESHOLD:.2f}", **metric_row(y_true, predicted)})
+    y_true = np.asarray([row["ground_truth_refusal"] for row in rows], dtype=bool)
+    predicted = np.asarray([row["tfidf_refusal_probability"] >= threshold for row in rows], dtype=bool)
+    summaries.append({"split": "all", "system": f"tfidf_proxy_p_ge_{threshold:.2f}", **metric_row(y_true, predicted)})
     output_dir = args.output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     payload = {
-        "primary_split": "evaluation",
-        "threshold": REFUSAL_THRESHOLD,
+        "primary_split": "all",
+        "threshold": threshold,
         "records": len(rows),
         "metrics": summaries,
-        "scope": "Primary metrics use the deterministic 858-row evaluation split not used for selecting the fixed F1 threshold. Calibration and all-test views are descriptive.",
+        "scope": "All labeled WildGuardTest rows are used only for final evaluation. The reporting threshold was selected on a deterministic held-out WildGuardTrain validation partition.",
     }
     (output_dir / "proxy_metrics.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     fields = ["split", "system", "n", "accuracy", "balanced_accuracy", "precision", "recall", "f1", "mIoU", "confusion_matrix"]
@@ -54,12 +53,12 @@ def main() -> None:
         writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
         writer.writerows(summaries)
-    lines = ["# Fixed-Threshold TF-IDF Refusal Proxy", "", f"Ground truth: official WildGuardTest `response_refusal_label`. Primary split: deterministic `evaluation`. Fixed threshold: `p >= {REFUSAL_THRESHOLD:.2f}`.", "", "| Split | n | Accuracy | Balanced acc. | Precision | Recall | F1 | mIoU |", "|---|---:|---:|---:|---:|---:|---:|---:|"]
+    lines = ["# Train-Calibrated TF-IDF Refusal Proxy", "", f"Ground truth: official WildGuardTest `response_refusal_label`. All labeled test rows are final evaluation only. Threshold selected on a held-out WildGuardTrain validation partition and rounded for reporting: `p >= {threshold:.2f}`.", "", "| Split | n | Accuracy | Balanced acc. | Precision | Recall | F1 | mIoU |", "|---|---:|---:|---:|---:|---:|---:|---:|"]
     for row in summaries:
         lines.append(f"| {row['split']} | {row['n']} | {row['accuracy']:.4f} | {row['balanced_accuracy']:.4f} | {row['precision']:.4f} | {row['recall']:.4f} | {row['f1']:.4f} | {row['mIoU']:.4f} |")
-    lines += ["", "Only the `evaluation` row is a primary held-out result. This is binary response-refusal evaluation, not human full/partial refusal evaluation."]
+    lines += ["", "This is binary response-refusal evaluation, not human full/partial refusal evaluation."]
     (output_dir / "proxy_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(json.dumps({"output_dir": str(output_dir), "primary_split": "evaluation", "records": len(rows)}, indent=2))
+    print(json.dumps({"output_dir": str(output_dir), "primary_split": "all", "records": len(rows), "threshold": threshold}, indent=2))
 
 
 if __name__ == "__main__":

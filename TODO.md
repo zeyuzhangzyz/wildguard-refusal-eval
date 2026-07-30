@@ -8,9 +8,9 @@
 
 ## Next
 
-- [ ] Materialize a new, provenance-recorded CPU-only report at the fixed
-  `p>=0.70` threshold if an on-disk report separate from the historical
-  `p>=0.6970338` run is needed.
+- [ ] Run the provenance-recorded Train-calibrated, full-1,720-row WildGuardTest
+  proxy report after reporting its CPU configuration. The threshold must be
+  selected only on a deterministic WildGuardTrain validation partition.
 - [ ] If needed after the proxy report, inspect GPU resources and obtain approval
   for the optional official-WildGuard-7B comparator.
 - [ ] Before a GPU run, inspect resources and confirm model path, visible GPUs,
