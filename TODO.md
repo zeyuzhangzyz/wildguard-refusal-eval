@@ -8,9 +8,6 @@
 
 ## Next
 
-- [ ] Run the provenance-recorded Train-calibrated, full-1,720-row WildGuardTest
-  proxy report after reporting its CPU configuration. The threshold must be
-  selected only from a held-out WildGuardTrain validation partition.
 - [ ] Diagnose the Train-to-Test calibration/distribution shift before promoting
   a Train-calibrated proxy F1 comparison or re-aggregating 25k refusal rates.
 - [ ] If needed after the proxy report, inspect GPU resources and obtain approval
@@ -32,3 +29,6 @@
   evaluation. It selected `p>=0.40` but showed a large Train/Test F1 gap
   (`98.42%` / `83.51%`), documenting why it is retained as a protocol diagnostic
   rather than the primary threshold-selection method.
+- [x] Tested stronger L2 regularization (`C=0.5` versus `C=2.0`) under the same
+  Train-validation/full-Test protocol. It reduced Test F1 from `0.8351` to
+  `0.8291`; retain `C=2.0` for this configuration.

@@ -34,6 +34,19 @@ choose an operating threshold; the full-Test metric estimates generalization.
 
 Confusion matrix (`[[TN, FP], [FN, TP]]`): `[[971, 186], [26, 537]]`.
 
+## Stronger-L2 diagnostic
+
+We repeated the identical Train-validation/full-Test protocol with `C=0.5`,
+which makes the L2 penalty four times stronger than the default `C=2.0`.
+
+| Logistic `C` | Raw validation threshold | Reported threshold | Validation F1 | Test Precision | Test Recall | Test F1 |
+|---:|---:|---:|---:|---:|---:|---:|
+| 2.0 | 0.3567 | `p >= 0.40` | 94.99% | 74.27% | 95.38% | 83.51% |
+| 0.5 | 0.4403 | `p >= 0.40` | 94.60% | 73.42% | 95.20% | 82.91% |
+
+Stronger L2 regularization does not improve the full-Test score (F1: -0.60
+points). We retain `C=2.0` as the better of these two fixed configurations.
+
 ## Interpretation
 
 The held-out Train-validation split independently selects the same rounded
@@ -42,6 +55,9 @@ threshold (`0.40`) as the earlier in-sample diagnostic, but full-Test F1 remains
 It indicates a **WildGuardTrain-to-WildGuardTest probability-calibration or
 distribution shift**: the training validation set favors a recall-heavy,
 permissive operating point that yields 186 false positives on Test.
+
+The stronger-L2 diagnostic does not correct this transfer gap, so it should not
+be attributed solely to excessive classifier flexibility.
 
 The 25k `p >= 0.70` rate table should remain a sensitivity view, not a
 Train-calibrated primary threshold claim. A future improvement would require
@@ -56,3 +72,5 @@ regularization would not establish that transfer.
 - Output metrics: `report/proxy_metrics.json`.
 - Full command and input hashes: `provenance.txt` and
   `candidates/benchmark_manifest.json`.
+- Stronger-L2 output: `outputs/wildguardtest_proxy/trainval_c05_full_test_20260730/`
+  at commit `90fe18e`.

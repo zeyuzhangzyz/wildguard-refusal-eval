@@ -64,6 +64,11 @@ Status: implementation_complete_not_executed
   Because independent Train validation selects the same threshold as the direct
   Train diagnostic, the failure is not solely in-sample threshold overfit; it
   indicates Train-to-Test calibration or distribution shift.
+- Completed `trainval_c05_full_test_20260730`: `C=0.5` selects raw validation
+  threshold `0.4403`, rounded to `0.40`, and obtains full-Test F1 `0.8291`,
+  precision `0.7342`, recall `0.9520`. It is worse than the matched `C=2.0`
+  result (F1 `0.8351`), so stronger L2 does not resolve the transfer/calibration
+  gap.
 - Registered a stronger-L2 diagnostic with `LOGISTIC_C=0.5` (four times the
   penalty of the prior `C=2.0`) under the same Train-validation/full-Test
   protocol. The launcher now validates and provenance-records `LOGISTIC_C`.

@@ -57,3 +57,22 @@ Status: completed
   F1 `0.9499`; full 1,720-label Test F1 `0.8351`, precision `0.7427`, recall
   `0.9538`. The matching `0.40` threshold in Train validation and the earlier
   direct-Train run indicates Train-to-Test calibration/distribution shift.
+
+## 2026-07-30 - trainval_c05_full_test_20260730
+
+Status: completed
+
+- Task type: `cpu_only`
+- Machine: local Windows workstation
+- GPU: N/A (`CUDA_VISIBLE_DEVICES` cleared)
+- Branch / commit: `main` / `90fe18e`
+- Script: `scripts/run_wildguardtest_proxy_eval.sh`
+- Input: `F:/code/SafetyLLM/LLM_safety_data/datasets/wildguardmix/train/wildguard_train.parquet` and `.../test/wildguard_test.parquet`
+- Output: `outputs/wildguardtest_proxy/trainval_c05_full_test_20260730`
+- Log: FastCtx job `j-j3wu3l`, `C:/Users/lingxueyi/.fastctx/jobs/j-j3wu3l/output.log`
+- Configuration: deterministic stratified 80/20 Train-validation protocol,
+  final full-Train refit, `LOGISTIC_C=0.5` (four times stronger L2 penalty),
+  CPU-only one thread.
+- Result: raw validation threshold `0.4403`, reported `p>=0.40`, validation F1
+  `0.9460`; full-Test F1 `0.8291`, precision `0.7342`, recall `0.9520`.
+  This is worse than the matched `C=2.0` full-Test F1 `0.8351`.
