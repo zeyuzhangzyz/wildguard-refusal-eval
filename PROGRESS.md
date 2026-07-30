@@ -48,5 +48,9 @@ Status: implementation_complete_not_executed
   threshold from its in-sample Train predictions, rounds it to one reportable
   decimal, and then scores the full test set. Compilation, unit tests, Bash
   syntax, and the real-data `MODE=plan` check pass.
-- A fresh provenance-recorded CPU run is pending; historic test-calibrated
-  numbers remain archival only and must not be used as the primary comparison.
+- Formal CPU-only run `train_calibrated_full_test_20260730` completed at commit
+  `0d98dd1`: 37,976 full-Train rows selected a raw in-sample F1 threshold of
+  `0.3720`, rounded to `0.40`. On all 1,720 WildGuardTest labels, this obtains
+  F1 `0.8351`, precision `0.7427`, and recall `0.9538`. The 98.42% in-sample
+  Train F1 demonstrates threshold overfitting; this protocol keeps Test clean
+  but is not the recommended primary operating-threshold selection procedure.

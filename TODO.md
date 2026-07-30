@@ -11,6 +11,9 @@
 - [ ] Run the provenance-recorded Train-calibrated, full-1,720-row WildGuardTest
   proxy report after reporting its CPU configuration. The threshold must be
   selected only from full WildGuardTrain in-sample predictions.
+- [ ] Replace direct in-sample Train threshold selection with held-out or
+  out-of-fold Train predictions before promoting a proxy F1 comparison or
+  re-aggregating 25k refusal rates under a new primary threshold.
 - [ ] If needed after the proxy report, inspect GPU resources and obtain approval
   for the optional official-WildGuard-7B comparator.
 - [ ] Before a GPU run, inspect resources and confirm model path, visible GPUs,
@@ -26,3 +29,7 @@
 - [x] Switched the reportable TF-IDF refusal threshold to the fixed, rounded
   `p>=0.70` convention. Recomputing the saved 1,720 probabilities gives full
   F1 `0.8640` and held-out evaluation F1 `0.8702`.
+- [x] Ran the requested direct full-Train threshold selection and full-Test
+  evaluation. It selected `p>=0.40` but showed a large Train/Test F1 gap
+  (`98.42%` / `83.51%`), documenting why it is retained as a protocol diagnostic
+  rather than the primary threshold-selection method.
