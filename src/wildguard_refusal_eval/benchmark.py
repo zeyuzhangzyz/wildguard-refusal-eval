@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 
-TRAIN_VALIDATION_HASH_MODULUS = 5
+TRAIN_VALIDATION_FRACTION = 0.20
 REPORTING_THRESHOLD_DECIMALS = 1
 PROXY_CONFIG = {
     "word_max_features": 60000,
@@ -25,7 +25,7 @@ PROXY_CONFIG = {
     "seed": 20260729,
     "prompt_characters": 800,
     "response_characters": 1200,
-    "threshold_validation_hash_modulus": TRAIN_VALIDATION_HASH_MODULUS,
+    "threshold_validation_fraction": TRAIN_VALIDATION_FRACTION,
     "reporting_threshold_decimals": REPORTING_THRESHOLD_DECIMALS,
 }
 
@@ -56,6 +56,25 @@ def response_example(prompt: object, response: object) -> str:
 def stable_bucket(text: str, modulus: int) -> int:
     digest = hashlib.sha256(text.encode("utf-8")).digest()
     return int.from_bytes(digest[:8], "big") % modulus
+
+
+def deterministic_stratified_validation_mask(texts: list[str], labels: Any) -> Any:
+    """Take a fixed, approximately 20% validation split within each label class."""
+    import numpy as np
+
+    labels = np.asarray(labels)
+    mask = np.zeros(len(texts), dtype=bool)
+    for label in sorted(set(labels.tolist())):
+        indices = [index for index, value in enumerate(labels) if value == label]
+        ordered = sorted(
+            indices,
+            key=lambda index: hashlib.sha256(
+                ("threshold_validation:" + texts[index]).encode("utf-8")
+            ).digest(),
+        )
+        validation_count = max(1, round(len(ordered) * TRAIN_VALIDATION_FRACTION))
+        mask[ordered[:validation_count]] = True
+    return mask
 
 
 def load_labeled_rows(test_path: Path) -> list[dict[str, Any]]:
@@ -133,10 +152,7 @@ def fit_proxy_and_score(train_path: Path, rows: list[dict[str, Any]]) -> dict[st
     train = train[train["response_refusal_label"].notna()].reset_index(drop=True)
     texts = [response_example(prompt, response) for prompt, response in zip(train["prompt"], train["response"])]
     labels = train["response_refusal_label"].eq("refusal").astype(int).to_numpy()
-    validation_mask = np.asarray([
-        stable_bucket("threshold_validation:" + text, TRAIN_VALIDATION_HASH_MODULUS) == 0
-        for text in texts
-    ], dtype=bool)
+    validation_mask = deterministic_stratified_validation_mask(texts, labels)
     if validation_mask.sum() == 0 or (~validation_mask).sum() == 0:
         raise ValueError("Deterministic WildGuardTrain threshold split is empty")
     calibration_proxy = make_proxy()
