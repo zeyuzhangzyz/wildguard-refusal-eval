@@ -45,7 +45,7 @@ def main() -> None:
         "threshold": threshold,
         "records": len(rows),
         "metrics": summaries,
-        "scope": "All labeled WildGuardTest rows are used only for final evaluation. The reporting threshold was selected from in-sample predictions of the final full WildGuardTrain fit.",
+        "scope": "All labeled WildGuardTest rows are used only for final evaluation. The reporting threshold was selected on a deterministic stratified held-out WildGuardTrain validation partition.",
     }
     (output_dir / "proxy_metrics.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     fields = ["split", "system", "n", "accuracy", "balanced_accuracy", "precision", "recall", "f1", "mIoU", "confusion_matrix"]
@@ -53,7 +53,7 @@ def main() -> None:
         writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
         writer.writerows(summaries)
-    lines = ["# Train-Calibrated TF-IDF Refusal Proxy", "", f"Ground truth: official WildGuardTest `response_refusal_label`. All labeled test rows are final evaluation only. Threshold selected from in-sample predictions of the final full WildGuardTrain fit and rounded for reporting: `p >= {threshold:.2f}`.", "", "| Split | n | Accuracy | Balanced acc. | Precision | Recall | F1 | mIoU |", "|---|---:|---:|---:|---:|---:|---:|---:|"]
+    lines = ["# Train-Calibrated TF-IDF Refusal Proxy", "", f"Ground truth: official WildGuardTest `response_refusal_label`. All labeled test rows are final evaluation only. Threshold selected on a deterministic stratified held-out WildGuardTrain validation partition and rounded for reporting: `p >= {threshold:.2f}`.", "", "| Split | n | Accuracy | Balanced acc. | Precision | Recall | F1 | mIoU |", "|---|---:|---:|---:|---:|---:|---:|---:|"]
     for row in summaries:
         lines.append(f"| {row['split']} | {row['n']} | {row['accuracy']:.4f} | {row['balanced_accuracy']:.4f} | {row['precision']:.4f} | {row['recall']:.4f} | {row['f1']:.4f} | {row['mIoU']:.4f} |")
     lines += ["", "This is binary response-refusal evaluation, not human full/partial refusal evaluation."]

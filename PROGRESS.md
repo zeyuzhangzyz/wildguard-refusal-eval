@@ -54,3 +54,6 @@ Status: implementation_complete_not_executed
   F1 `0.8351`, precision `0.7427`, and recall `0.9538`. The 98.42% in-sample
   Train F1 demonstrates threshold overfitting; this protocol keeps Test clean
   but is not the recommended primary operating-threshold selection procedure.
+- User-directed follow-up: restored deterministic stratified Train/validation
+  threshold selection for the next primary run. This preserves a Test-only final
+  evaluation while avoiding the observed in-sample threshold overfit.

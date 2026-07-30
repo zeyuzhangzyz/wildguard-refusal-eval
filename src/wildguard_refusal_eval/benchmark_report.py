@@ -79,12 +79,12 @@ def main() -> None:
         metrics = metric_row(y_true, np.asarray([row[key] for row in rows], dtype=bool))
         summaries.append({"split": "all", "system": name, **metrics})
     bootstrap["all"] = bootstrap_differences(y_true, np.asarray([row["tfidf"] for row in rows], dtype=bool), np.asarray([row["wildguard7b"] for row in rows], dtype=bool), args.bootstrap_repetitions, args.bootstrap_seed)
-    payload = {"primary_split": "all", "threshold": threshold, "records": len(rows), "metrics": summaries, "paired_bootstrap_tfidf_minus_wildguard7b": bootstrap, "scope": "All labeled WildGuardTest rows are final evaluation only; threshold selection used in-sample predictions from the final full WildGuardTrain fit."}
+    payload = {"primary_split": "all", "threshold": threshold, "records": len(rows), "metrics": summaries, "paired_bootstrap_tfidf_minus_wildguard7b": bootstrap, "scope": "All labeled WildGuardTest rows are final evaluation only; threshold selection used a deterministic stratified held-out WildGuardTrain validation partition."}
     (output_dir / "benchmark_metrics.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     with (output_dir / "benchmark_metrics.csv").open("w", encoding="utf-8", newline="") as handle:
         fields = ["split", "system", "n", "accuracy", "balanced_accuracy", "precision", "recall", "f1", "mIoU", "confusion_matrix"]
         writer = csv.DictWriter(handle, fieldnames=fields); writer.writeheader(); writer.writerows(summaries)
-    lines = ["# WildGuardTest Response-Refusal Benchmark", "", f"All labeled WildGuardTest rows are final evaluation. TF-IDF threshold selected from the final full WildGuardTrain fit: `p >= {threshold:.2f}`.", "", "| Split | System | n | Accuracy | Balanced acc. | Precision | Recall | F1 | mIoU |", "|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
+    lines = ["# WildGuardTest Response-Refusal Benchmark", "", f"All labeled WildGuardTest rows are final evaluation. TF-IDF threshold selected on held-out WildGuardTrain validation: `p >= {threshold:.2f}`.", "", "| Split | System | n | Accuracy | Balanced acc. | Precision | Recall | F1 | mIoU |", "|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
     for row in summaries:
         lines.append(f"| {row['split']} | {row['system']} | {row['n']} | {row['accuracy']:.4f} | {row['balanced_accuracy']:.4f} | {row['precision']:.4f} | {row['recall']:.4f} | {row['f1']:.4f} | {row['mIoU']:.4f} |")
     lines += ["", "Binary refusal is not full/partial refusal ground truth."]
