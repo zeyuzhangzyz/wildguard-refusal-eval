@@ -89,6 +89,15 @@ not a supported Windows serving path. Python 3.9+ is supported.
    huggingface-cli download allenai/wildguard --local-dir /models/WildGuard-7B
    ```
 
+   The versioned, provenance-recording server alternative is:
+
+   ```bash
+   MODE=run CONFIRM_WILDGUARD_MODEL_DOWNLOAD=1 \
+   PYTHON_BIN=/home/amax/miniforge3/envs/cxj/bin/python \
+   OUTPUT_DIR=/data1/dxx/LLM_score/models/WildGuard-7B \
+   bash scripts/run_download_wildguard_model.sh
+   ```
+
 3. Place or link your candidate file anywhere, then run one shard. This command
    uses physical GPUs 4 and 5 when `CUDA_DEVICE_ORDER=PCI_BUS_ID` is respected,
    creates `[30,45)`, and uses TP=2 by default:

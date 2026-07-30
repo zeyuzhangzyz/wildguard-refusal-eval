@@ -2,6 +2,9 @@
 
 ## Doing
 
+- [ ] Download the access-approved official `allenai/wildguard` weights to
+  `amax-77:/data1/dxx/LLM_score/models/WildGuard-7B` through the versioned,
+  resume-capable downloader. This is weight preparation only, not inference.
 - [ ] Resolve the `amax-77` Hugging Face network route, upload/download the
   immutable Base and Instruct 540,000-response matrices through the authorized
   dataset repository, then execute the range-sharded official WildGuard SGLang
