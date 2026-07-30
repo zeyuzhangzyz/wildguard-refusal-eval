@@ -26,6 +26,9 @@ case "${MODE}" in
     [[ ! -e "${VENV_DIR}" ]] || { echo "Venv already exists; refusing to modify: ${VENV_DIR}" >&2; exit 3; }
     "${BASE_PYTHON}" -m venv --system-site-packages "${VENV_DIR}"
     "${VENV_DIR}/bin/python" -m pip install "sglang==${SGLANG_VERSION}" "huggingface_hub>=0.24" "openai>=1.30"
+    # PyPI's current torch wheel can omit this runtime dependency even though
+    # libtorch loads it. Keep it inside the isolated venv, not the shared conda.
+    "${VENV_DIR}/bin/python" -m pip install "nvidia-nvshmem-cu12"
     "${VENV_DIR}/bin/python" -m pip install --no-deps -e "${REPO_ROOT}"
     "${VENV_DIR}/bin/python" - <<'PY'
 import sglang, torch

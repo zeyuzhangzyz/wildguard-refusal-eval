@@ -27,6 +27,9 @@ Status: implementation_complete_not_executed
   handling in this server environment (`key_proxy_ssl_context`). The preparer
   now preserves the base venv pip version; the failed temporary venv is replaced
   before retrying.
+- The mirror-available SGLang installation then resolved to PyTorch 2.9.1 but
+  its wheel lacked `libnvshmem_host.so.3`. The preparer now installs the missing
+  NVIDIA runtime wheel within the isolated venv before its import witness.
 
 ## 2026-07-29 - Initial standalone package
 
