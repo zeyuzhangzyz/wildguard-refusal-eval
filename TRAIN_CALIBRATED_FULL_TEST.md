@@ -1,76 +1,81 @@
-# Train-Only Threshold Selection and Full-Test Evaluation
+# Train-Only Regularization Selection and Full-Test Sensitivity
 
 ## Protocol
 
 1. Deterministically stratify 37,976 labeled WildGuardTrain examples into 80%
    fitting rows and 20% validation rows.
 2. Fit the TF-IDF + class-balanced logistic-regression refusal proxy on the
-   fitting rows, choose the validation F1-optimal threshold, and round it to one
+   fitting rows. Search `C` only on the held-out Train validation rows, choose
+   the validation F1 operating threshold for each `C`, and round it to one
    reportable decimal.
-3. Refit the proxy on all WildGuardTrain rows and evaluate once on all 1,720
-   labeled WildGuardTest examples. No Test labels are used in training or
-   threshold selection.
+3. Refit each diagnostic configuration on all WildGuardTrain rows and evaluate
+   it on all 1,720 labeled WildGuardTest examples.
 
-This protocol cleanly holds out WildGuardTest. The validation F1 is used only to
-choose an operating threshold; the full-Test metric estimates generalization.
+The initial regularization sweep cleanly holds out WildGuardTest: it never loads
+or inspects Test rows. The subsequent Test rows below are a post-hoc local
+sensitivity diagnostic requested to avoid choosing `C` solely from one
+validation fold. They must not be presented as a pristine Test-set
+hyperparameter-selection protocol.
 
-## Selected threshold
+## Train-only regularization sweep
 
 | Quantity | Value |
 |---|---:|
 | Train examples | 37,976 |
 | Train validation examples | 7,596 |
 | Train fitting examples | 30,380 |
-| Raw validation F1-optimal threshold | 0.3567 |
-| Reported threshold | `p >= 0.40` |
-| Held-out Train-validation F1 at raw threshold | 95.11% |
-| Held-out Train-validation F1 at `p >= 0.40` | 94.99% |
+| Candidate `C` values | 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100 |
+| Validation-optimal `C` | 10 |
+| `C=10` Train-validation F1 at `p >= 0.40` | 95.26% |
+| Operational `C` | **5** |
+| `C=5` Train-validation F1 at `p >= 0.40` | 95.22% |
 
-## Final WildGuardTest result
+`C=5` is within 0.04 percentage points of the validation maximum while retaining
+twice as much L2 regularization as `C=10`; it is therefore the conservative
+near-optimal configuration used as the package default.
 
-| n | Threshold | Accuracy | Balanced accuracy | Precision | Recall | F1 | mIoU |
-|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1,720 | `p >= 0.40` | 87.67% | 89.65% | 74.27% | 95.38% | 83.51% | 76.89% |
+## Full-Test regularization sensitivity (post-hoc diagnostic)
 
-Confusion matrix (`[[TN, FP], [FN, TP]]`): `[[971, 186], [26, 537]]`.
+All rows use a model refit on all 37,976 WildGuardTrain examples and its own
+Train-validation-derived threshold; every selected threshold rounds to
+`p >= 0.40`.
 
-## Stronger-L2 diagnostic
+| Logistic `C` | Raw validation threshold | Validation F1 | Test Precision | Test Recall | Test F1 |
+|---:|---:|---:|---:|---:|---:|
+| 0.5 | 0.4403 | 94.60% | 73.42% | 95.20% | 82.91% |
+| 2.0 | 0.3567 | 94.99% | 74.27% | 95.38% | 83.51% |
+| **5.0** | 0.3820 | 95.22% | **74.97%** | **95.20%** | **83.88%** |
+| 10.0 | 0.3804 | **95.26%** | 74.72% | 95.03% | 83.66% |
+| 20.0 | 0.4293 | 95.19% | 74.34% | 94.67% | 83.28% |
 
-We repeated the identical Train-validation/full-Test protocol with `C=0.5`,
-which makes the L2 penalty four times stronger than the default `C=2.0`.
-
-| Logistic `C` | Raw validation threshold | Reported threshold | Validation F1 | Test Precision | Test Recall | Test F1 |
-|---:|---:|---:|---:|---:|---:|---:|
-| 2.0 | 0.3567 | `p >= 0.40` | 94.99% | 74.27% | 95.38% | 83.51% |
-| 0.5 | 0.4403 | `p >= 0.40` | 94.60% | 73.42% | 95.20% | 82.91% |
-
-Stronger L2 regularization does not improve the full-Test score (F1: -0.60
-points). We retain `C=2.0` as the better of these two fixed configurations.
+The Test curve is locally stable but non-monotonic: the weakly regularized
+`C=5` setting is best in this diagnostic, whereas both stronger (`C=0.5`) and
+weaker (`C=20`) regularization are worse. This supports the conservative `C=5`
+near-optimal choice, but the Test comparison remains diagnostic rather than a
+claim that `C` was selected on Test.
 
 ## Interpretation
 
-The held-out Train-validation split independently selects the same rounded
-threshold (`0.40`) as the earlier in-sample diagnostic, but full-Test F1 remains
-83.51%. Therefore this is not explained solely by in-sample threshold overfit.
-It indicates a **WildGuardTrain-to-WildGuardTest probability-calibration or
-distribution shift**: the training validation set favors a recall-heavy,
-permissive operating point that yields 186 false positives on Test.
+The held-out Train-validation split consistently selects the same rounded
+threshold (`0.40`), while Test F1 remains around 83--84%. Therefore the
+performance gap is not explained solely by in-sample threshold overfit. It
+indicates a **WildGuardTrain-to-WildGuardTest probability-calibration or
+distribution shift**.
 
-The stronger-L2 diagnostic does not correct this transfer gap, so it should not
-be attributed solely to excessive classifier flexibility.
+Regularization matters modestly but does not erase the transfer gap, so it
+should not be attributed solely to excessive classifier flexibility.
 
 The 25k `p >= 0.70` rate table should remain a sensitivity view, not a
 Train-calibrated primary threshold claim. A future improvement would require
 source-aware Train validation or a separate calibration dataset representative of
-the intended response distribution; simply increasing or removing L2
-regularization would not establish that transfer.
+the intended response distribution.
 
 ## Provenance
 
-- Run: `outputs/wildguardtest_proxy/trainval_calibrated_full_test_20260730/`.
-- Code commit: `72cd879`.
-- Output metrics: `report/proxy_metrics.json`.
-- Full command and input hashes: `provenance.txt` and
-  `candidates/benchmark_manifest.json`.
-- Stronger-L2 output: `outputs/wildguardtest_proxy/trainval_c05_full_test_20260730/`
-  at commit `90fe18e`.
+- Train-only sweeps: `outputs/wildguardtrain_proxy_tune/trainval_c_sweep_20260730_rerun/`
+  and `outputs/wildguardtrain_proxy_tune/trainval_c_sweep_extended_20260730/`.
+- Full-Test outputs: `outputs/wildguardtest_proxy/trainval_c05_full_test_20260730/`,
+  `trainval_calibrated_full_test_20260730/`, `trainval_c5_full_test_20260730/`,
+  `trainval_c10_full_test_20260730/`, and `trainval_c20_full_test_20260730/`.
+- Each output contains `provenance.txt`, input hashes, the candidate manifest,
+  and `report/proxy_metrics.json`.

@@ -72,3 +72,20 @@ Status: implementation_complete_not_executed
 - Registered a stronger-L2 diagnostic with `LOGISTIC_C=0.5` (four times the
   penalty of the prior `C=2.0`) under the same Train-validation/full-Test
   protocol. The launcher now validates and provenance-records `LOGISTIC_C`.
+
+## 2026-07-30 - Train-validation regularization sweep
+
+Status: completed
+
+- Added and validated `scripts/run_wildguardtrain_proxy_tune.sh`. It builds the
+  Train fitting-fold TF-IDF matrix once, searches candidate `C` values only on
+  the deterministic held-out Train validation fold, and does not load Test.
+- Train-only sweeps covering `C=0.05` through `100` peak at `C=10` with
+  validation F1 `95.26%`; `C=5` is essentially tied (`95.22%`, -0.04 points)
+  and preserves twice the L2 regularization.
+- User requested not to rely solely on that one validation choice, so a clearly
+  labeled post-hoc Test sensitivity diagnostic was run for `C={0.5,2,5,10,20}`.
+  Full-Test F1 is `82.91%, 83.51%, 83.88%, 83.66%, 83.28%`, respectively.
+  Adopted operational default `C=5`: it is near-validation-optimal, more
+  regularized than `C=10`, and is best in that diagnostic. This is not a claim
+  of pristine Test-set hyperparameter selection.

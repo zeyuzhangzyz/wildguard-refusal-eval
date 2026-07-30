@@ -15,6 +15,9 @@ all labeled WildGuardTest rows. Do not launch its GPU mode without a fresh
 resource
 inspection and explicit configuration approval.
 
-The CPU launcher accepts `LOGISTIC_C` (default `2.0`) and records it in both
-provenance and the candidate manifest. Lower `C` means stronger L2 regularization;
-the registered stronger-regularization diagnostic uses `LOGISTIC_C=0.5`.
+The CPU launcher accepts `LOGISTIC_C` (default `5.0`) and records it in both
+provenance and the candidate manifest. Lower `C` means stronger L2 regularization.
+The current operational default (`C=5`) was selected from the near-optimal
+Train-validation plateau and checked in a clearly labeled post-hoc Test
+sensitivity analysis; do not describe that Test comparison as pristine
+hyperparameter selection.

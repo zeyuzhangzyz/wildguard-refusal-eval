@@ -32,3 +32,6 @@
 - [x] Tested stronger L2 regularization (`C=0.5` versus `C=2.0`) under the same
   Train-validation/full-Test protocol. It reduced Test F1 from `0.8351` to
   `0.8291`; retain `C=2.0` for this configuration.
+- [x] Ran Train-only regularization sweeps and a post-hoc Test sensitivity check.
+  Package default is now `C=5`: validation F1 `95.22%` (within 0.04 points of
+  the Train-validation maximum) and diagnostic Test F1 `83.88%`.
