@@ -20,3 +20,8 @@ provenance and the candidate manifest. Lower `C` means stronger L2 regularizatio
 The user-selected operational default is `C=10`; its full-Train/full-Test result
 is F1 `0.8366` at `p>=0.40`. The C-sensitivity Test comparison is post-hoc and
 must not be described as pristine hyperparameter selection.
+
+`scripts/run_prompt_balanced_refusal_holdout.sh` is a Train-derived diagnostic
+with exactly 2,000 `unharmful`-request QA pairs and 2,000 `harmful`-request QA
+pairs. It holds out prompts—not merely rows—so held-out requests do not enter
+either proxy fitting or threshold validation. It is never an external test.

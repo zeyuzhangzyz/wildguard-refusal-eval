@@ -5,6 +5,8 @@
 - [x] Validate editable installation and a fixture `MODE=plan` range.
 - [x] Monitor `full_test_f1_20260730` and verify its full-test proxy report,
   exact 1,720-row coverage, provenance, and output metrics.
+- [ ] Run and verify the fixed prompt-disjoint 2,000-unharmful + 2,000-harmful
+  QA-pair Train-derived refusal-detection holdout.
 
 ## Next
 
