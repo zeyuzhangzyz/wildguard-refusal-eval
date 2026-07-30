@@ -34,6 +34,12 @@ Status: implementation_complete_not_executed
   SOCKS route. Added a requests-based streaming download fallback that follows
   the same authenticated Hub URL, writes atomically, and retains a post-download
   SHA-256 record without printing credentials.
+- Uploaded the aligned 6,000-prompt file and both immutable 540,000-response
+  matrices (Base 2.49 GB, Instruct 1.85 GB) to the private
+  `FreeFeFive/LLM_score` dataset repository with SHA-256 records. Remote
+  downloads are not yet complete: the temporary SOCKS route is intermittent and
+  all eligible `amax-77` GPUs became occupied by other users before a scoring
+  launch. No model server or inference job was started.
 
 ## 2026-07-29 - Initial standalone package
 

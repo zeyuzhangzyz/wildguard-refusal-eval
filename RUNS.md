@@ -19,8 +19,11 @@ Status: prepared_not_started
   `zeyuzy/LLM_safety_update_reward`, using `scripts/run_sync_hf_artifact.sh` and
   standard secure Hugging Face authentication only.
 - Status: `amax-77` has Hugging Face cache credentials and client packages, but
-  a Hub API request timed out; no artifact, model, candidate, or judgment output
-  has been created.
+  a Hub API request timed out; the three immutable inputs were then uploaded to
+  private `FreeFeFive/LLM_score` through a temporary secure credential bridge.
+  Download attempts left no response matrix or judgment output. At the last
+  check physical GPUs 0, 1, 5, and 7 had active external workloads; no formal
+  7B scorer was launched.
 
 ## 2026-07-30 - full_test_f1_20260730
 
