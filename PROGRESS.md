@@ -57,3 +57,10 @@ Status: implementation_complete_not_executed
 - User-directed follow-up: restored deterministic stratified Train/validation
   threshold selection for the next primary run. This preserves a Test-only final
   evaluation while avoiding the observed in-sample threshold overfit.
+- Formal CPU-only run `trainval_calibrated_full_test_20260730` completed at
+  commit `72cd879`: 7,596 stratified Train validation rows select raw threshold
+  `0.3567`, rounded to `0.40`, with validation F1 `0.9499`. The full 1,720-row
+  Test score is nevertheless F1 `0.8351`, precision `0.7427`, recall `0.9538`.
+  Because independent Train validation selects the same threshold as the direct
+  Train diagnostic, the failure is not solely in-sample threshold overfit; it
+  indicates Train-to-Test calibration or distribution shift.
