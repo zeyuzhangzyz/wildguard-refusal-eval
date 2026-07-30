@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Any
 
 
-TRAIN_VALIDATION_FRACTION = 0.20
 REPORTING_THRESHOLD_DECIMALS = 1
 PROXY_CONFIG = {
     "word_max_features": 60000,
@@ -25,7 +24,6 @@ PROXY_CONFIG = {
     "seed": 20260729,
     "prompt_characters": 800,
     "response_characters": 1200,
-    "threshold_validation_fraction": TRAIN_VALIDATION_FRACTION,
     "reporting_threshold_decimals": REPORTING_THRESHOLD_DECIMALS,
 }
 
@@ -51,30 +49,6 @@ def response_example(prompt: object, response: object) -> str:
         "[USER] " + clean_text(prompt, PROXY_CONFIG["prompt_characters"])
         + "\n[ASSISTANT] " + clean_text(response, PROXY_CONFIG["response_characters"])
     )
-
-
-def stable_bucket(text: str, modulus: int) -> int:
-    digest = hashlib.sha256(text.encode("utf-8")).digest()
-    return int.from_bytes(digest[:8], "big") % modulus
-
-
-def deterministic_stratified_validation_mask(texts: list[str], labels: Any) -> Any:
-    """Take a fixed, approximately 20% validation split within each label class."""
-    import numpy as np
-
-    labels = np.asarray(labels)
-    mask = np.zeros(len(texts), dtype=bool)
-    for label in sorted(set(labels.tolist())):
-        indices = [index for index, value in enumerate(labels) if value == label]
-        ordered = sorted(
-            indices,
-            key=lambda index: hashlib.sha256(
-                ("threshold_validation:" + texts[index]).encode("utf-8")
-            ).digest(),
-        )
-        validation_count = max(1, round(len(ordered) * TRAIN_VALIDATION_FRACTION))
-        mask[ordered[:validation_count]] = True
-    return mask
 
 
 def load_labeled_rows(test_path: Path) -> list[dict[str, Any]]:
@@ -128,7 +102,7 @@ def binary_f1(labels: Any, predictions: Any) -> float:
 
 
 def select_threshold(probabilities: Any, labels: Any) -> dict[str, float | int]:
-    """Select an F1 threshold on WildGuardTrain validation predictions only."""
+    """Select an F1 operating threshold from full WildGuardTrain predictions."""
     import numpy as np
     from sklearn.metrics import precision_recall_curve
 
@@ -152,24 +126,18 @@ def fit_proxy_and_score(train_path: Path, rows: list[dict[str, Any]]) -> dict[st
     train = train[train["response_refusal_label"].notna()].reset_index(drop=True)
     texts = [response_example(prompt, response) for prompt, response in zip(train["prompt"], train["response"])]
     labels = train["response_refusal_label"].eq("refusal").astype(int).to_numpy()
-    validation_mask = deterministic_stratified_validation_mask(texts, labels)
-    if validation_mask.sum() == 0 or (~validation_mask).sum() == 0:
-        raise ValueError("Deterministic WildGuardTrain threshold split is empty")
-    calibration_proxy = make_proxy()
-    calibration_proxy.fit([text for text, keep in zip(texts, ~validation_mask) if keep], labels[~validation_mask])
-    validation_probabilities = calibration_proxy.predict_proba([text for text, keep in zip(texts, validation_mask) if keep])[:, 1]
-    threshold = select_threshold(validation_probabilities, labels[validation_mask])
     proxy = make_proxy()
     proxy.fit(texts, labels)
+    threshold = select_threshold(proxy.predict_proba(texts)[:, 1], labels)
     probabilities = proxy.predict_proba([response_example(row["prompt"], row["response"]) for row in rows])[:, 1]
     for row, probability in zip(rows, probabilities):
         row["tfidf_refusal_probability"] = float(probability)
         row["tfidf_refusal_threshold"] = threshold["reporting_threshold"]
         row["tfidf_refusal_at_threshold"] = bool(probability >= threshold["reporting_threshold"])
     return {
-        "source": "deterministic held-out validation partition of WildGuardTrain",
-        "validation_records": int(validation_mask.sum()),
-        "fitting_records": int((~validation_mask).sum()),
+        "source": "in-sample probability predictions from the final full WildGuardTrain fit",
+        "calibration_records": len(texts),
+        "fitting_records": len(texts),
         **threshold,
     }
 
@@ -198,7 +166,7 @@ def main() -> None:
         "records": len(rows),
         "refusal_positive_count": sum(row["ground_truth_refusal"] for row in rows),
         "test_protocol": "all labeled WildGuardTest rows are reserved for final evaluation only",
-        "threshold_selection": "select F1-optimal threshold on deterministic WildGuardTrain validation predictions, then round to one reportable decimal before scoring the full WildGuardTest",
+        "threshold_selection": "fit on all WildGuardTrain rows, select the F1-optimal in-sample training threshold, round to one reportable decimal, then score the full WildGuardTest once",
         "output_dir": str(output_dir),
     }
     if args.mode == "plan":

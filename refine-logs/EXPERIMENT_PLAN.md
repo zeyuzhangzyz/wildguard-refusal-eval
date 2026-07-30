@@ -22,10 +22,9 @@ the 7B comparison is supplementary rather than a prerequisite.
 ### B1: Train-calibrated full WildGuardTest proxy benchmark
 - Claim tested: C1.
 - Dataset / split: all 1,720 WildGuardTest rows with a response-refusal label;
-  train TF-IDF only on WildGuardTrain. A deterministic 20% validation partition
-  of WildGuardTrain selects the F1-optimal threshold, rounded to one reportable
-  decimal. The final proxy is refit on all WildGuardTrain rows; all 1,720
-  WildGuardTest rows are then evaluated exactly once.
+  train TF-IDF only on WildGuardTrain. The final full-Train fit's in-sample
+  predictions select the F1-optimal threshold, rounded to one reportable decimal.
+  All 1,720 WildGuardTest rows are then evaluated exactly once.
 - Compared systems: fixed-threshold TF-IDF proxy against official dataset labels.
 - Metrics: accuracy, balanced accuracy, precision, recall, F1, mIoU, and the
   complete confusion matrix.
@@ -63,8 +62,8 @@ the 7B comparison is supplementary rather than a prerequisite.
 
 ## Risks and Mitigations
 
-- Threshold protocol: choose the threshold exclusively from a deterministic
-  WildGuardTrain validation partition; never use WildGuardTest for calibration.
+- Threshold protocol: choose the threshold exclusively from full WildGuardTrain
+  in-sample predictions; never use WildGuardTest for calibration.
 - Judge scope: report binary refusal only, never full/partial refusal or human
   over-refusal.
 - Failure recovery: JSONL judgments resume by example ID after manifest/hash

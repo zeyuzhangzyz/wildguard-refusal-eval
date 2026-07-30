@@ -10,7 +10,7 @@
 
 - [ ] Run the provenance-recorded Train-calibrated, full-1,720-row WildGuardTest
   proxy report after reporting its CPU configuration. The threshold must be
-  selected only on a deterministic WildGuardTrain validation partition.
+  selected only from full WildGuardTrain in-sample predictions.
 - [ ] If needed after the proxy report, inspect GPU resources and obtain approval
   for the optional official-WildGuard-7B comparator.
 - [ ] Before a GPU run, inspect resources and confirm model path, visible GPUs,

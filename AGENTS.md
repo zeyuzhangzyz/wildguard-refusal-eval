@@ -8,8 +8,8 @@ range plus input-hash provenance. Never store Hugging Face tokens or API keys.
 
 The reportable proxy comparison is registered in
 `scripts/run_wildguardtest_benchmark_vllm.sh` and
-`refine-logs/EXPERIMENT_PLAN.md`. It selects the proxy threshold on a
-deterministic held-out WildGuardTrain validation partition, rounds it to one
-reportable decimal, and evaluates once on all labeled WildGuardTest rows. Do not
-launch its GPU mode without a fresh resource
+`refine-logs/EXPERIMENT_PLAN.md`. It selects the proxy threshold from in-sample
+predictions of the final full WildGuardTrain fit, rounds it to one reportable
+decimal, and evaluates once on all labeled WildGuardTest rows. Do not launch its
+GPU mode without a fresh resource
 inspection and explicit configuration approval.

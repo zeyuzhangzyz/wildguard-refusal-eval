@@ -44,10 +44,9 @@ Status: implementation_complete_not_executed
 
 - Replaced the prior WildGuardTest calibration/evaluation split. The benchmark
   now reserves all 1,720 labeled WildGuardTest examples for one final report.
-- It deterministically holds out one fifth of WildGuardTrain for threshold
-  selection, chooses the validation F1-optimal boundary, rounds it to one
-  reportable decimal, and then refits the proxy on all WildGuardTrain rows before
-  scoring the full test set. Compilation, three unit tests, Bash syntax, and the
-  real-data `MODE=plan` check pass.
+- It fits the final proxy on all WildGuardTrain rows, selects the F1-optimal
+  threshold from its in-sample Train predictions, rounds it to one reportable
+  decimal, and then scores the full test set. Compilation, unit tests, Bash
+  syntax, and the real-data `MODE=plan` check pass.
 - A fresh provenance-recorded CPU run is pending; historic test-calibrated
   numbers remain archival only and must not be used as the primary comparison.
