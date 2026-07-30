@@ -14,4 +14,7 @@ Status: implementation_complete_not_executed
   the historical deterministic hash into 862 calibration and 858
   threshold-unseen evaluation examples. Three unit tests, compilation, Bash
   syntax, and the real-data no-write plan passed.
+- Separated the CPU-only TF-IDF F1 report from the optional GPU WildGuard-7B
+  comparator. The primary report needs only official WildGuardTest labels and
+  the frozen proxy threshold; it does not wait for 7B inference.
 - No model inference or GPU server has been launched from this new repository.

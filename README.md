@@ -96,9 +96,9 @@ taxonomy and should not alone be reported as human-ground-truth over-refusal.
 
 ## Reproducible WildGuardTest comparison
 
-The repository also contains a registered benchmark comparing the frozen local
-WildGuardMix TF-IDF/logistic proxy against official WildGuard-7B. It uses only
-`response_refusal_label` from WildGuardTest. The proxy is trained on
+The repository also contains a registered, CPU-only benchmark for the frozen
+local WildGuardMix TF-IDF/logistic proxy. It uses official
+WildGuardTest `response_refusal_label` as ground truth. The proxy is trained on
 WildGuardTrain; its `p>=0.6970338` threshold was selected before this benchmark
 on a deterministic calibration half of WildGuardTest. The primary report uses
 the other deterministic 858-row evaluation half. The full 1,720-label test
@@ -110,11 +110,20 @@ Prepare and inspect the benchmark without GPU inference:
 pip install -e '.[serve,test,benchmark]'
 MODE=plan WILDGUARD_TRAIN=/data/wildguard_train.parquet \
 WILDGUARD_TEST=/data/wildguard_test.parquet \
-bash scripts/run_wildguardtest_benchmark_vllm.sh
+bash scripts/run_wildguardtest_proxy_eval.sh
 ```
 
-The corresponding `MODE=run` command uses the same two paths plus `MODEL_PATH`
-and `CUDA_VISIBLE_DEVICES`; it creates candidates, scores all 1,720 responses,
-and writes `report/benchmark_report.md`, JSON, CSV, per-system metrics and
-paired bootstrap differences. See `refine-logs/EXPERIMENT_PLAN.md` for the
-claim boundary and split protocol.
+The CPU report command is:
+
+```bash
+MODE=run CONFIRM_WILDGUARDTEST_PROXY_EVAL=1 \
+WILDGUARD_TRAIN=/data/wildguard_train.parquet \
+WILDGUARD_TEST=/data/wildguard_test.parquet \
+RUN_ID=proxy_f1_v1 bash scripts/run_wildguardtest_proxy_eval.sh
+```
+
+It writes `report/proxy_report.md`, JSON, and CSV. The optional official
+WildGuard-7B comparator remains available through
+`scripts/run_wildguardtest_benchmark_vllm.sh`, but it is not required to report
+the proxy's held-out F1. See `refine-logs/EXPERIMENT_PLAN.md` for the claim
+boundary and split protocol.
