@@ -98,7 +98,7 @@ def load_labeled_rows(test_path: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def make_proxy() -> Any:
+def make_proxy(logistic_c: float) -> Any:
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.linear_model import LogisticRegression
     from sklearn.pipeline import FeatureUnion, Pipeline
@@ -107,7 +107,7 @@ def make_proxy() -> Any:
         ("word", TfidfVectorizer(analyzer="word", ngram_range=PROXY_CONFIG["word_ngram_range"], min_df=PROXY_CONFIG["min_df"], max_df=PROXY_CONFIG["max_df"], max_features=PROXY_CONFIG["word_max_features"], sublinear_tf=True, strip_accents="unicode")),
         ("char", TfidfVectorizer(analyzer="char_wb", ngram_range=PROXY_CONFIG["char_ngram_range"], min_df=PROXY_CONFIG["min_df"], max_df=PROXY_CONFIG["max_df"], max_features=PROXY_CONFIG["char_max_features"], sublinear_tf=True)),
     ])
-    classifier = LogisticRegression(C=PROXY_CONFIG["logistic_c"], max_iter=PROXY_CONFIG["max_iter"], class_weight="balanced", solver="liblinear", random_state=PROXY_CONFIG["seed"])
+    classifier = LogisticRegression(C=logistic_c, max_iter=PROXY_CONFIG["max_iter"], class_weight="balanced", solver="liblinear", random_state=PROXY_CONFIG["seed"])
     return Pipeline([("features", features), ("classifier", classifier)])
 
 
@@ -140,7 +140,7 @@ def select_threshold(probabilities: Any, labels: Any) -> dict[str, float | int]:
     }
 
 
-def fit_proxy_and_score(train_path: Path, rows: list[dict[str, Any]]) -> dict[str, Any]:
+def fit_proxy_and_score(train_path: Path, rows: list[dict[str, Any]], logistic_c: float) -> dict[str, Any]:
     import pandas as pd
 
     train = pd.read_parquet(train_path, columns=["prompt", "response", "response_refusal_label"])
@@ -148,11 +148,11 @@ def fit_proxy_and_score(train_path: Path, rows: list[dict[str, Any]]) -> dict[st
     texts = [response_example(prompt, response) for prompt, response in zip(train["prompt"], train["response"])]
     labels = train["response_refusal_label"].eq("refusal").astype(int).to_numpy()
     validation_mask = deterministic_stratified_validation_mask(texts, labels)
-    calibration_proxy = make_proxy()
+    calibration_proxy = make_proxy(logistic_c)
     calibration_proxy.fit([text for text, keep in zip(texts, ~validation_mask) if keep], labels[~validation_mask])
     validation_probabilities = calibration_proxy.predict_proba([text for text, keep in zip(texts, validation_mask) if keep])[:, 1]
     threshold = select_threshold(validation_probabilities, labels[validation_mask])
-    proxy = make_proxy()
+    proxy = make_proxy(logistic_c)
     proxy.fit(texts, labels)
     probabilities = proxy.predict_proba([response_example(row["prompt"], row["response"]) for row in rows])[:, 1]
     for row, probability in zip(rows, probabilities):
@@ -179,8 +179,11 @@ def main() -> None:
     parser.add_argument("--wildguard-train", type=Path, required=True)
     parser.add_argument("--wildguard-test", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--logistic-c", type=float, default=PROXY_CONFIG["logistic_c"])
     args = parser.parse_args()
     train_path, test_path, output_dir = args.wildguard_train.resolve(), args.wildguard_test.resolve(), args.output_dir.resolve()
+    if args.logistic_c <= 0:
+        raise ValueError("--logistic-c must be positive")
     rows = load_labeled_rows(test_path)
     plan = {
         "mode": args.mode,
@@ -192,6 +195,7 @@ def main() -> None:
         "refusal_positive_count": sum(row["ground_truth_refusal"] for row in rows),
         "test_protocol": "all labeled WildGuardTest rows are reserved for final evaluation only",
         "threshold_selection": "fit on a deterministic stratified WildGuardTrain fitting partition, select the F1-optimal threshold on the held-out Train validation partition, round to one reportable decimal, refit on all WildGuardTrain rows, then score the full WildGuardTest once",
+        "logistic_c": args.logistic_c,
         "output_dir": str(output_dir),
     }
     if args.mode == "plan":
@@ -199,11 +203,12 @@ def main() -> None:
         return
     if output_dir.exists():
         raise FileExistsError(f"Refusing to overwrite {output_dir}")
-    threshold = fit_proxy_and_score(train_path, rows)
+    threshold = fit_proxy_and_score(train_path, rows, args.logistic_c)
     output_dir.mkdir(parents=True)
     candidate_path = output_dir / "candidates.jsonl"
     write_jsonl(candidate_path, rows)
-    manifest = {**plan, "created_at_utc": utc_now(), "candidate_file": str(candidate_path), "candidate_sha256": sha256_file(candidate_path), "proxy_config": PROXY_CONFIG, "threshold": threshold}
+    proxy_config = {**PROXY_CONFIG, "logistic_c": args.logistic_c}
+    manifest = {**plan, "created_at_utc": utc_now(), "candidate_file": str(candidate_path), "candidate_sha256": sha256_file(candidate_path), "proxy_config": proxy_config, "threshold": threshold}
     (output_dir / "benchmark_manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
 

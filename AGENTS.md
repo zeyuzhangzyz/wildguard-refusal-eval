@@ -14,3 +14,7 @@ to one reportable decimal, then refits on all Train rows and evaluates once on
 all labeled WildGuardTest rows. Do not launch its GPU mode without a fresh
 resource
 inspection and explicit configuration approval.
+
+The CPU launcher accepts `LOGISTIC_C` (default `2.0`) and records it in both
+provenance and the candidate manifest. Lower `C` means stronger L2 regularization;
+the registered stronger-regularization diagnostic uses `LOGISTIC_C=0.5`.
